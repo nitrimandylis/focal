@@ -43,6 +43,7 @@ def get_db():
     """Return a thread-local sqlite3 connection to DB_PATH."""
     if not hasattr(_local, "connection") or _local.connection is None:
         _local.connection = sqlite3.connect(config.DB_PATH)
+        _local.connection.execute("PRAGMA foreign_keys = ON")
         _local.connection.row_factory = sqlite3.Row
     return _local.connection
 
