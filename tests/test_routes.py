@@ -179,6 +179,37 @@ def test_post_photo_tag_remove_returns_200(client):
 
 
 # ---------------------------------------------------------------------------
+# POST /photo/<id>/notes
+# ---------------------------------------------------------------------------
+
+def test_post_photo_notes_returns_200(client):
+    with patch("app.routes.get_db", return_value=_mock_db()), \
+         patch("app.routes.models.get_photo", return_value=PHOTO), \
+         patch("app.routes.models.update_notes"):
+        resp = client.post(
+            "/photo/1/notes",
+            data=json.dumps({"notes": "This is a great photo"}),
+            content_type="application/json",
+        )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+
+
+def test_post_photo_notes_missing_returns_404(client):
+    with patch("app.routes.get_db", return_value=_mock_db()), \
+         patch("app.routes.models.get_photo", return_value=None):
+        resp = client.post(
+            "/photo/999/notes",
+            data=json.dumps({"notes": "test"}),
+            content_type="application/json",
+        )
+    assert resp.status_code == 404
+    body = resp.get_json()
+    assert body["error"] == "not found"
+
+
+# ---------------------------------------------------------------------------
 # POST /photo/<id>/exif
 # ---------------------------------------------------------------------------
 

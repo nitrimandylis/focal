@@ -21,6 +21,9 @@ bp = Blueprint("main", __name__)
 # Allowed file extensions (lower-case, without leading dot)
 _ALLOWED = config.ALLOWED_EXTENSIONS
 
+# Filter keys for gallery generation
+_FILTER_KEYS = {"tag_id", "date_from", "date_to", "camera_model"}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -89,6 +92,9 @@ def upload():
 
     original_path = os.path.join(config.UPLOAD_FOLDER, filename)
     thumb_path = os.path.join(config.THUMB_FOLDER, thumb_filename)
+
+    os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(config.THUMB_FOLDER, exist_ok=True)
 
     file.save(original_path)
 
@@ -171,6 +177,25 @@ def photo_tag(photo_id: int):
     return jsonify({"ok": True})
 
 
+@bp.route("/photo/<int:photo_id>/notes", methods=["POST"])
+def update_notes(photo_id: int):
+    """Update notes field for a photo."""
+    db = get_db()
+    photo = models.get_photo(db, photo_id)
+    if photo is None:
+        return _not_found()
+
+    body = request.get_json(silent=True) or {}
+    notes = body.get("notes", "")
+
+    try:
+        models.update_notes(db, photo_id, notes)
+    except ValueError as exc:
+        return _error(str(exc), 400)
+
+    return jsonify({"ok": True})
+
+
 @bp.route("/photo/<int:photo_id>/exif", methods=["POST"])
 def update_exif(photo_id: int):
     """Merge JSON body fields into exif_overrides_json for a photo."""
@@ -228,7 +253,6 @@ def delete_photo(photo_id: int):
 @bp.route("/gallery/generate")
 def gallery_generate():
     """Generate a shareable gallery token from query-param filters."""
-    _FILTER_KEYS = {"tag_id", "date_from", "date_to", "camera_model"}
     raw = {k: v for k, v in request.args.items() if k in _FILTER_KEYS}
 
     # Coerce tag_id to int when provided
