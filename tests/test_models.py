@@ -115,6 +115,12 @@ def test_update_notes(db):
 
 
 @pytest.mark.unit
+def test_update_notes_photo_not_found(db):
+    with pytest.raises(ValueError, match="Photo 999 not found"):
+        models.update_notes(db, 999, "Notes")
+
+
+@pytest.mark.unit
 def test_update_exif_overrides_merge(db):
     models.insert_photo(db, "a.jpg", "a_t.jpg", {"Model": "DSC-RX100"})
     models.update_exif_overrides(db, 1, {"ISO": 400})
@@ -124,11 +130,23 @@ def test_update_exif_overrides_merge(db):
 
 
 @pytest.mark.unit
+def test_update_exif_overrides_photo_not_found(db):
+    with pytest.raises(ValueError, match="Photo 999 not found"):
+        models.update_exif_overrides(db, 999, {"ISO": 400})
+
+
+@pytest.mark.unit
 def test_reset_exif_overrides(db):
     models.insert_photo(db, "a.jpg", "a_t.jpg", {})
     models.update_exif_overrides(db, 1, {"ISO": 400})
     result = models.reset_exif_overrides(db, 1)
     assert result["exif_overrides_json"] is None
+
+
+@pytest.mark.unit
+def test_reset_exif_overrides_photo_not_found(db):
+    with pytest.raises(ValueError, match="Photo 999 not found"):
+        models.reset_exif_overrides(db, 999)
 
 
 # ---------------------------------------------------------------------------

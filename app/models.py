@@ -105,6 +105,8 @@ def delete_photo(db: sqlite3.Connection, photo_id: int) -> None:
 
 def update_notes(db: sqlite3.Connection, photo_id: int, notes: str) -> dict:
     """Update the notes field for a photo and return the updated photo dict."""
+    if get_photo(db, photo_id) is None:
+        raise ValueError(f"Photo {photo_id} not found")
     db.execute("UPDATE photos SET notes = ? WHERE id = ?", (notes, photo_id))
     db.commit()
     return get_photo(db, photo_id)
@@ -114,6 +116,8 @@ def update_exif_overrides(
     db: sqlite3.Connection, photo_id: int, fields_dict: dict
 ) -> dict:
     """Merge fields_dict into existing exif_overrides_json and return updated photo."""
+    if get_photo(db, photo_id) is None:
+        raise ValueError(f"Photo {photo_id} not found")
     row = db.execute(
         "SELECT exif_overrides_json FROM photos WHERE id = ?", (photo_id,)
     ).fetchone()
@@ -130,6 +134,8 @@ def update_exif_overrides(
 
 def reset_exif_overrides(db: sqlite3.Connection, photo_id: int) -> dict:
     """Set exif_overrides_json to NULL and return the updated photo dict."""
+    if get_photo(db, photo_id) is None:
+        raise ValueError(f"Photo {photo_id} not found")
     db.execute(
         "UPDATE photos SET exif_overrides_json = NULL WHERE id = ?", (photo_id,)
     )
