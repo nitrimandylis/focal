@@ -2,6 +2,7 @@ import sqlite3
 import threading
 
 import config
+from flask import current_app
 
 _local = threading.local()
 
@@ -42,10 +43,22 @@ EXPECTED_TABLES = {"photos", "tags", "photo_tags", "galleries"}
 def get_db():
     """Return a thread-local sqlite3 connection to DB_PATH."""
     if not hasattr(_local, "connection") or _local.connection is None:
-        _local.connection = sqlite3.connect(config.DB_PATH)
+        try:
+            db_path = current_app.config["DB_PATH"]
+        except RuntimeError:
+            db_path = config.DB_PATH
+        _local.connection = sqlite3.connect(db_path)
         _local.connection.execute("PRAGMA foreign_keys = ON")
         _local.connection.row_factory = sqlite3.Row
     return _local.connection
+
+
+def teardown_db() -> None:
+    """Close and clear the thread-local DB connection."""
+    conn = getattr(_local, "connection", None)
+    if conn is not None:
+        conn.close()
+        _local.connection = None
 
 
 def init_db(db):

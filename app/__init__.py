@@ -30,7 +30,7 @@ def create_app(config: dict | None = None) -> Flask:
     os.makedirs(app.config["THUMB_FOLDER"], exist_ok=True)
 
     # Initialise database schema
-    from app.db import close_db, get_db, init_db  # noqa: PLC0415
+    from app.db import get_db, init_db  # noqa: PLC0415
 
     with app.app_context():
         db = get_db()
@@ -38,14 +38,10 @@ def create_app(config: dict | None = None) -> Flask:
 
     # Tear down thread-local DB connection at the end of each request context
     @app.teardown_appcontext
-    def teardown_db(exception: BaseException | None) -> None:  # noqa: ANN001
-        from app import db as db_module  # noqa: PLC0415
+    def _teardown_db(exception: BaseException | None) -> None:  # noqa: ANN001
+        from app.db import teardown_db  # noqa: PLC0415
 
-        if (
-            hasattr(db_module._local, "connection")
-            and db_module._local.connection is not None
-        ):
-            close_db(db_module._local.connection)
+        teardown_db()
 
     # Register main blueprint
     from app.routes import bp  # noqa: PLC0415
