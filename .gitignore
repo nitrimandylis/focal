@@ -205,6 +205,12 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Photo Manager — project-specific
+db.sqlite
+app/static/photos/
+*.pyc
+.pytest_cache/
+
 # Ruff stuff:
 .ruff_cache/
 
