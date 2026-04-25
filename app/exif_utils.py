@@ -17,9 +17,6 @@ EXIF_FIELD_NAMES = {
     "GPSInfo",
 }
 
-# Map EXIF tag IDs to names once at module load
-_TAG_ID_TO_NAME: dict[int, str] = {v: k for k, v in ExifTags.TAGS.items()}
-
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -51,8 +48,11 @@ def extract_exif(filepath: str) -> dict[str, Any]:
     """
     result: dict[str, Any] = {key: None for key in EXIF_FIELD_NAMES}
 
-    with Image.open(filepath) as img:
-        raw = img._getexif()  # noqa: SLF001 — no public API equivalent
+    try:
+        with Image.open(filepath) as img:
+            raw = img._getexif()  # noqa: SLF001 — no public API equivalent
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError(f"Cannot open image {filepath}: {exc}") from exc
 
     if raw is None:
         return result
@@ -77,11 +77,14 @@ def generate_thumbnail(src_path: str, dest_path: str, width: int = 300) -> str:
 
     Aspect ratio is preserved. Returns dest_path.
     """
-    with Image.open(src_path) as img:
-        orig_width, orig_height = img.size
-        height = round(orig_height * width / orig_width)
-        thumb = img.resize((width, height), Image.LANCZOS)
-        thumb.save(dest_path, "JPEG")
+    try:
+        with Image.open(src_path) as img:
+            orig_width, orig_height = img.size
+            height = round(orig_height * width / orig_width)
+            thumb = img.resize((width, height), Image.LANCZOS)
+            thumb.save(dest_path, "JPEG")
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError(f"Cannot open image {src_path}: {exc}") from exc
     return dest_path
 
 
